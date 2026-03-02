@@ -1,0 +1,30 @@
+name: auto-merge-copilot-fixes
+
+on:
+  workflow_run:
+    workflows: ["Tests"]       
+    types: [completed]
+
+jobs:
+  auto-merge:
+    if: >
+      ${{
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'pull_request' &&
+        startsWith(github.event.workflow_run.head_branch, 'copilot/') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Merge Copilot PR
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_FOR_COPILOT }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          gh pr merge "$PR_NUMBER" \
+            --merge \
+            --repo "$REPO" \
+            --delete-branch
