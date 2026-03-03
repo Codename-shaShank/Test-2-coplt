@@ -96,7 +96,6 @@ GEM
       railties (>= 4.1.0)
       responders
       warden (~> 1.2.3)
-    drb (2.2.3)
     erubi (1.13.1)
     globalid (1.2.1)
       activesupport (>= 6.1)
@@ -127,9 +126,7 @@ GEM
     matrix (0.4.2)
     method_source (1.1.0)
     mini_mime (1.1.5)
-    minitest (6.0.2)
-      drb (~> 2.0)
-      prism (~> 1.5)
+    minitest (5.27.0)
     msgpack (1.7.2)
     net-imap (0.4.10)
       date
@@ -144,7 +141,6 @@ GEM
     nokogiri (1.19.1-x86_64-linux-gnu)
       racc (~> 1.4)
     orm_adapter (0.5.0)
-    prism (1.9.0)
     psych (5.1.2)
       stringio
     public_suffix (5.0.4)
@@ -247,6 +243,7 @@ DEPENDENCIES
   groupdate (~> 6.4)
   importmap-rails
   jbuilder
+  minitest (~> 5.0)
   puma (~> 5.0)
   rails (~> 7.0.8, >= 7.0.8.1)
   redis (~> 4.0)

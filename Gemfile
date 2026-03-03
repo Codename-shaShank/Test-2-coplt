@@ -71,10 +71,10 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
-
 end
 
 gem "chartkick", "~> 5.0"
 gem "groupdate", "~> 6.4"
 
 gem "devise", "~> 4.9"
+gem "minitest", "~> 5.0"
