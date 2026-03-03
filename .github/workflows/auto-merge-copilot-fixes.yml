@@ -1,30 +1,51 @@
-name: auto-merge-copilot-fixes
+name: Auto Merge Copilot Fixes
 
 on:
   pull_request:
-    types: [synchronize, opened, reopened]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
   auto-merge:
-    if: >
-      github.event.pull_request.draft == false &&
-      github.event.pull_request.user.login == 'copilot[bot]'
+    if: startsWith(github.event.pull_request.head.ref, 'copilot/')
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
 
     steps:
-      # ── Step 1: Merge the PR (--admin bypasses protections) ──
-      - name: Merge Copilot PR
+      # 1️⃣ Convert Draft → Ready
+      - name: Mark PR ready for review
+        if: github.event.pull_request.draft == true
+        run: gh pr ready ${{ github.event.pull_request.number }} --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_FOR_COPILOT }}
+
+      # 2️⃣ Check CI status (retry next attempt if not green)
+      - name: Check required CI checks
+        id: ci
         env:
           GH_TOKEN: ${{ secrets.GH_PAT_FOR_COPILOT }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          gh pr merge "$PR_NUMBER" \
-            --merge \
-            --repo "$REPO" \
-            --delete-branch \
-            --admin
-          echo "✅ Merged and deleted branch for PR #$PR_NUMBER"
+          if gh pr checks "$PR_NUMBER" --required --repo "$REPO"; then
+            echo "can_merge=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Required checks passed."
+          else
+            echo "can_merge=false" >> "$GITHUB_OUTPUT"
+            echo "⏭️ Required checks are failing or pending. Will retry on next PR attempt."
+          fi
+
+      # 3️⃣ Approve PR
+      - name: Approve PR
+        if: steps.ci.outputs.can_merge == 'true'
+        run: gh pr review ${{ github.event.pull_request.number }} --approve --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 4️⃣ Merge PR
+      - name: Merge PR
+        if: steps.ci.outputs.can_merge == 'true'
+        run: gh pr merge ${{ github.event.pull_request.number }} --merge --delete-branch --admin --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_FOR_COPILOT }}
