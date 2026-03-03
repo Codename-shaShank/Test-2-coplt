@@ -71,7 +71,8 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
-
+  # minitest 6.x is incompatible with Rails 7.0.x; pin to 5.x
+  gem "minitest", "~> 5.0"
 end
 
 gem "chartkick", "~> 5.0"
