@@ -39,30 +39,19 @@ jobs:
           echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "✅ Found PR #$PR_NUMBER"
 
-      # ── Step 2: Auto-approve the Copilot PR ──────────────────
-      # Uses GITHUB_TOKEN so the approver is a different identity
-      # than the PR author (GH_PAT_FOR_COPILOT), satisfying
-      # branch protection "required reviews" rules.
-      - name: Auto-approve Copilot PR
-        if: steps.find_pr.outputs.skip != 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ steps.find_pr.outputs.pr_number }}
-        run: |
-          gh pr review "$PR_NUMBER" \
-            --approve \
-            --repo "$REPO" \
-            --body "✅ Auto-approved: CI passed on Copilot fix branch."
-
-      # ── Step 3: Merge the PR (--admin bypasses protections) ──
-      - name: Merge Copilot PR
+      # ── Step 2: Mark draft as ready + merge directly ──────────
+      - name: Convert draft to ready and merge
         if: steps.find_pr.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GH_PAT_FOR_COPILOT }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ steps.find_pr.outputs.pr_number }}
         run: |
+          # Convert draft → ready (Copilot always creates drafts)
+          gh pr ready "$PR_NUMBER" --repo "$REPO" || echo "PR already ready"
+          echo "✅ PR #$PR_NUMBER marked as ready"
+
+          # Merge immediately — --admin bypasses all branch protections
           gh pr merge "$PR_NUMBER" \
             --merge \
             --repo "$REPO" \
